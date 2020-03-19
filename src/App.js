@@ -147,14 +147,15 @@ function App() {
       if (temp.indexOf("!DOCTYPE") === -1) {
         let list = new Partition(null, JSON.parse(temp));
         let queue = sortingService.createQueue(list, [], true);
-        setQueue(queue);
-        console.log(queue);
-        setMergeValues(queue);
-        setLeft(queue[0].items[i]);
-        setRight(
-          queue[sortingService.findWithAttr(queue, "id", queue[0].id + 1)]
-            .items[j]
-        );
+        if(queue){
+          setQueue(queue);
+          setMergeValues(queue);
+          setLeft(queue[0].items[i]);
+          setRight(
+            queue[sortingService.findWithAttr(queue, "id", queue[0].id + 1)]
+              .items[j]
+          );
+        }
       }
     };
     getProfile();
