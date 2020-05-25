@@ -1,22 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import { Partition } from "./partition";
 import { SortingService } from "./sorting-service";
 
-let i = 0;
-let j = 0;
-let temp = [];
+let i = localStorage.getItem("MAL_Tier_i") || 0;
+let j = localStorage.getItem("MAL_Tier_j") || 0;
+let temp = JSON.parse(localStorage.getItem("MAL_Tier_Temp")) || [];
 
 function App() {
-  const [queue, setQueue] = useState([]);
-  const [left, setLeft] = useState({});
-  const [right, setRight] = useState({});
+  const sortingService = new SortingService();
+  const [queue, setQueue] = useState(JSON.parse(localStorage.getItem("MAL_Tier_Queue")) || []);
+  const [left, setLeft] = useState(JSON.parse(localStorage.getItem("MAL_Tier_Left")) || {});
+  const [right, setRight] = useState(JSON.parse(localStorage.getItem("MAL_Tier_Right")) || {});
   const [min, setMin] = useState(0);
   const [max, setMax] = useState(0);
-  const { register, handleSubmit } = useForm();
-  const sortingService = new SortingService();
+  const [formError, setFormError] = useState(null)
+  const { register, handleSubmit, errors } = useForm();
 
   const step = leftCheck => {
     return function() {
@@ -46,7 +47,7 @@ function App() {
         }
       }
 
-      setMax(max -1);
+      setMax(max - 1);
 
       if (!queue[0].items[i] || !queue[rightIndex].items[j]) {
         if (queue[0].items[i]) {
@@ -102,8 +103,8 @@ function App() {
             ].items[j]
           );
         }
-        setMergeValues(splicedQueue);
         setQueue(splicedQueue);
+        setMergeValues();
       }
     };
   };
@@ -114,7 +115,7 @@ function App() {
     }
   }
 
-  const setMergeValues = queue => {
+  const setMergeValues = useCallback(() => {
     let min = 0;
     let max = 0;
 
@@ -129,12 +130,12 @@ function App() {
       max += queue[i].items.length + queue[rightIndex].items.length - 1
     }
 
-    setMin(min);
-    setMax(max);
-  }
+    setMin(i >= j ? min - i : min - j);
+    setMax(max - i - j);
+  }, [queue, sortingService])
 
-  const submitProfile = data => {
-    const getProfile = async () => {
+  const submitProfile = async data => {
+    try {
       const response = await axios.get(
         `/animelist/${data.profile}?status=${data.state}`
       );
@@ -147,23 +148,57 @@ function App() {
       if (temp.indexOf("!DOCTYPE") === -1) {
         let list = new Partition(null, JSON.parse(temp));
         let queue = sortingService.createQueue(list, [], true);
-        if(queue){
+        if(queue.length > 1){
           setQueue(queue);
-          setMergeValues(queue);
+          setMergeValues();
+          setFormError(null);
           setLeft(queue[0].items[i]);
           setRight(
             queue[sortingService.findWithAttr(queue, "id", queue[0].id + 1)]
               .items[j]
           );
+        } else {
+          setQueue([]);
+          setFormError(true);
         }
       }
-    };
-    getProfile();
+    }
+    catch {
+      setQueue([]);
+      setFormError(true);
+    }
   };
+
+  const saveQueue = () => {
+    return () => {
+      localStorage.setItem("MAL_Tier_Queue", JSON.stringify(queue));
+      localStorage.setItem("MAL_Tier_Left", JSON.stringify(left));
+      localStorage.setItem("MAL_Tier_Right", JSON.stringify(right));
+      localStorage.setItem("MAL_Tier_i", i);
+      localStorage.setItem("MAL_Tier_j", j);
+      localStorage.setItem("MAL_Tier_Temp", JSON.stringify(temp));
+      alert("Rankings Saved")
+    }
+  }
+
+  const clearStorage = () => {
+    return () => {
+      localStorage.clear();
+      alert("Rankings Deleted")
+    }
+  }
+
+  useEffect(() => {
+    setMergeValues()
+  }, [setMergeValues]);
 
   return (
     <div className="container">
       <h1 className="header blue">MAL Tier List Sorter</h1>
+      <div>
+        <input className="button button-save success" type="button" onClick={saveQueue()} value="SAVE" />
+        <input className="button button-clear warning" type="button" onClick={clearStorage()} value="CLEAR" />
+      </div>
       {queue.length === 1 ? (
         <div>
           {queue[0].items.map((e, i) => {
@@ -200,7 +235,12 @@ function App() {
             className="form-input"
             type="text"
             name="profile"
-            ref={register({ required: true })}
+            placeholder="MAL Username"
+            ref={register({ required: {
+                value: true,
+                message: "Username is required"
+              }
+            })}
           />
           <select className="form-select" name="state" defaultValue="2" ref={register}>
             <option value="7">All</option>
@@ -211,6 +251,7 @@ function App() {
             <option value="6">Plan To Watch</option>
           </select>
           <input className="button success" type="submit" value="SUBMIT" />
+          {(errors.profile || formError) && <b className="row form-error">Invalid Input</b>}
         </form>
       )}
     </div>
