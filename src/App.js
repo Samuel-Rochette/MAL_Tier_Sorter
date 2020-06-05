@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
-import axios from "axios";
 import { useForm } from "react-hook-form";
 import { Partition } from "./partition";
 import { SortingService } from "./sorting-service";
