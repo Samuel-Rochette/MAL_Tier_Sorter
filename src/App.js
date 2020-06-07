@@ -9,12 +9,6 @@ let i = localStorage.getItem("MAL_Tier_i") || 0;
 let j = localStorage.getItem("MAL_Tier_j") || 0;
 let temp = JSON.parse(localStorage.getItem("MAL_Tier_Temp")) || [];
 
-jikanjs.loadUser("Shining_Boy", "animelist", "completed").then((response) => {
-    // console.log(response);
-}).catch((err) => {
-    console.error(err);
-});
-
 function App() {
   const sortingService = new SortingService();
   const [queue, setQueue] = useState(JSON.parse(localStorage.getItem("MAL_Tier_Queue")) || []);
