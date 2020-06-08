@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import "./App.css";
+import axios from "axios";
 import { useForm } from "react-hook-form";
 import { Partition } from "./partition";
 import { SortingService } from "./sorting-service";
-import * as jikanjs from "jikanjs";
 
 let i = localStorage.getItem("MAL_Tier_i") || 0;
 let j = localStorage.getItem("MAL_Tier_j") || 0;
@@ -55,8 +55,8 @@ function App() {
             if (
               sortingService.findWithAttr(
                 temp,
-                "title",
-                e.title
+                "anime_title",
+                e.anime_title
               ) === -1
             ) {
               temp.push(e);
@@ -67,8 +67,8 @@ function App() {
             if (
               sortingService.findWithAttr(
                 temp,
-                "title",
-                e.title
+                "anime_title",
+                e.anime_title
               ) === -1
             ) {
               temp.push(e);
@@ -111,7 +111,7 @@ function App() {
 
   const openTab = url => {
     return function() {
-      window.open(url, '_blank');
+      window.open(`https://myanimelist.net${url}`, '_blank');
     }
   }
 
@@ -132,30 +132,35 @@ function App() {
 
     setMin(i >= j ? min - i : min - j);
     setMax(max - i - j);
-  }, [queue, sortingService]);
+  }, [queue, sortingService])
 
-  const submitProfile = data => {
-    jikanjs.loadUser(data.profile, "animelist", data.state).then((res) => {
-      let list = new Partition(null, res.anime);
-      let queue = sortingService.createQueue(list, [], true);
-      if (queue.length > 1 ) {
-        setQueue(queue);
-        setMergeValues();
-        setFormError(null);
-        setLeft(queue[0].items[i]);
-        setRight(
-          queue[sortingService.findWithAttr(queue, "id", queue[0].id + 1)]
-            .items[j]
-        );
-      } else {
-        setQueue([]);
-        setFormError(true);
+  const submitProfile = async data => {
+    try {
+      const response = await axios.get(
+        `/animelist/${data.profile}/load.json?offset=0&status=${data.state}`
+      );
+      if (response.data.length > 0) {
+        let list = new Partition(null, response.data);
+        let queue = sortingService.createQueue(list, [], true);
+        if(queue.length > 1){
+          setQueue(queue);
+          setMergeValues();
+          setFormError(null);
+          setLeft(queue[0].items[i]);
+          setRight(
+            queue[sortingService.findWithAttr(queue, "id", queue[0].id + 1)]
+              .items[j]
+          );
+        } else {
+          setQueue([]);
+          setFormError(true);
+        }
       }
-    }).catch((err) => {
-      console.log(err)
+    }
+    catch {
       setQueue([]);
       setFormError(true);
-    });
+    }
   };
 
   const saveQueue = () => {
@@ -173,7 +178,7 @@ function App() {
   const clearStorage = () => {
     return () => {
       localStorage.clear();
-      alert("Rankings Deleted");
+      alert("Rankings Deleted")
     }
   }
 
@@ -192,10 +197,10 @@ function App() {
         <div>
           {queue[0].items.map((e, i) => {
             return (
-              <div className="card list-card row" onClick={openTab(e.url)}>
+              <div className="card list-card row" onClick={openTab(e.anime_url)}>
                 <h4 className="list-index"><b>{i + 1}</b></h4>
-                <h4 className="list-title"><b>{e.title}</b></h4>
-                <img className="list-image" src={e.image_url} alt={'image ' + i} />
+                <h4 className="list-title"><b>{e.anime_title}</b></h4>
+                <img className="list-image" src={e.anime_image_path} alt={'image ' + i} />
               </div>
             )})
           }
@@ -204,15 +209,15 @@ function App() {
         <div>
           <div className="center card-container row">
             <div className="card" onClick={step(true)}>
-              <img className="card-image" src={left.image_url} alt="left-card" />
+              <img className="card-image" src={left.anime_image_path} alt="left-card" />
               <div className="card-content">
-                <h4><b>{left.title}</b></h4>
+                <h4><b>{left.anime_title}</b></h4>
               </div>
             </div>
             <div className="card" onClick={step(false)}>
-              <img className="card-image" src={right.image_url} alt="right-card" />
+              <img className="card-image" src={right.anime_image_path}alt="right-card" />
               <div className="card-content">
-                <h4><b>{right.title}</b></h4>
+                <h4><b>{right.anime_title}</b></h4>
               </div>
             </div>
           </div>
@@ -232,12 +237,12 @@ function App() {
             })}
           />
           <select className="form-select" name="state" defaultValue="2" ref={register}>
-            <option value="completed">Completed</option>
-            <option value="all">All</option>
-            <option value="watching">Watching</option>
-            <option value="onhold">On Hold</option>
-            <option value="dropped">Dropped</option>
-            <option value="ptw">Plan To Watch</option>
+            <option value="7">All</option>
+            <option value="1">Watching</option>
+            <option value="2">Completed</option>
+            <option value="3">On Hold</option>
+            <option value="4">Dropped</option>
+            <option value="6">Plan To Watch</option>
           </select>
           <input className="button success" type="submit" value="SUBMIT" />
           {(errors.profile || formError) && <b className="row form-error">Invalid Input</b>}

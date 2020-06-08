@@ -1,6 +1,6 @@
 # Mal Tier Sorting App
 
-This is a React application made for sorting anime from a profile on https://myanimelist.net/, and is currently hosted at https://myanimetierlist.herokuapp.com/. It was originally made to help users rate anime more consistently, but it can be used to sort anime in other ways like finding which shows on your plan to watch list are of high interest, or your least favorite anime from your dropped list. The app leverages Jikan which is an unofficial API for MAL, and is documented at https://jikan.moe/.
+This is a React application made for sorting anime from a profile on https://myanimelist.net/, and is currently hosted at https://myanimetierlist.herokuapp.com/. It was originally made to help users rate anime more consistently, but it can be used to sort anime in other ways like finding which shows on your plan to watch list are of high interest, or your least favorite anime from your dropped list.
 
 ## How To Use
 
